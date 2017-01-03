@@ -10,11 +10,11 @@ learn overall.
 
 Currently, the repo contains:
 
-generator/
-    A tool to generate traffic to a ThingsBoard server to help learn the platform.  This will generate device 
+generator/<br>
+- A tool to generate traffic to a ThingsBoard server to help learn the platform.  This will generate device 
     (client) attributes as well as basic telemetry data to give you a starting point.
     
-Open Warning:
+Open Warning:<br>
     I will do my best to document and test my code, but it is presented here as a "best-effort", and is not to
     be considered for production use.
     
