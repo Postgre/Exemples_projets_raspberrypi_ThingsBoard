@@ -1,6 +1,6 @@
-# ThingsBoard
-To learn more about ThingsBoard, visit the website at http://thingsboard.io<br><br>
-Join the ThingsBoard Users Group on Facebook at https://www.facebook.com/groups/thingsboardusers/<br><br>
+# Thingsboard
+To learn more about Thingsboard, visit the website at http://thingsboard.io<br><br>
+Join the Thingsboard Users Group on Facebook at https://www.facebook.com/groups/thingsboardusers/<br><br>
 The contents of this repo are a collection of tools and scripts written to help folks interested in the 
 Internet of Things (IoT) and learning how the different pieces of information throughout our lives can be
 brought together into a single place where data turns into information.
@@ -12,7 +12,7 @@ learn overall.
 Currently, the repo contains:
 
 generator/<br>
-- A tool to generate traffic to a ThingsBoard server to help learn the platform.  This will generate device 
+- A tool to generate traffic to a Thingsboard server to help learn the platform.  This will generate device 
     (client) attributes as well as basic telemetry data to give you a starting point.
     
 Open Warning:<br>
