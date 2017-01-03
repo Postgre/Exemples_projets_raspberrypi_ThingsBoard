@@ -1,5 +1,6 @@
 # ThingsBoard
-
+To learn more about ThingsBoard, visit the website at http://thingsboard.io<br><br>
+Join the ThingsBoard Users Group on Facebook at https://www.facebook.com/groups/thingsboardusers/<br><br>
 The contents of this repo are a collection of tools and scripts written to help folks interested in the 
 Internet of Things (IoT) and learning how the different pieces of information throughout our lives can be
 brought together into a single place where data turns into information.
