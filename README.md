@@ -17,7 +17,10 @@ generator/<br>
 
 raspberry_pi/monitor<br>
 - A framework for managing multiple sesnsors on one or more devices.  The modular framework will allow you to
-     read many differnt sources and send to many different TB devices.  Heavily commented, I expect that there
+     read many differnt sources and send to many different TB devices.  If network connections are down, then the 
+     script will cache telemetry information until the network connection returns.  You can also tell the sensors
+     to cache only, allowing you to create telemetry information completely offline, to be imported at a later date
+     (timestamps of initial datapoints are retained in the cached records). Heavily commented, I expect that there
      will be many different use cases that this might help address, at least as a starting point
     
 Open Warning:<br>
