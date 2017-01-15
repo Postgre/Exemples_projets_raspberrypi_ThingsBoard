@@ -14,6 +14,11 @@ Currently, the repo contains:
 generator/<br>
 - A tool to generate traffic to a Thingsboard server to help learn the platform.  This will generate device 
     (client) attributes as well as basic telemetry data to give you a starting point.
+
+raspberry_pi/monitor<br>
+- A framework for managing multiple sesnsors on one or more devices.  The modular framework will allow you to
+     read many differnt sources and send to many different TB devices.  Heavily commented, I expect that there
+     will be many different use cases that this might help address, at least as a starting point
     
 Open Warning:<br>
     I will do my best to document and test my code, but it is presented here as a "best-effort", and is not to
