@@ -165,22 +165,13 @@ def read_ds18b20(_device,_label):
         temp_f=(temp_c * 9.0/5.0 + 32)
         temp = float(temp_f)
         ds18b20 = { 'tele': {
-                        'temp_'+_label: round(temp,1)
-                        },
-                    'attr': {
-                        'type': 'ds18b20',
-                        'device': _device
-                        }
-                    }
+                        'temp'+_label: round(temp,1)
+                        }}
     elif err == 1:
         ds18b20 = { 'tele': {
                         'temp_'+_label: 'error'
-                        },
-                    'attr': {
-                        'type': 'ds18b20',
-                        'device': err
-                        }
-                    }
+                        }}
+
     
     return ds18b20
 
@@ -211,11 +202,8 @@ def read_owmapi(_device,_label):
         writeevt('Error in gathering weather information in read_owmapi: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
         err = 1
         conditions = { 'tele': {
-                           'temp': 'error'
-                           },
-                        'attr': {
-                            'weather_status': 'error'
-                            }
+                           'temp'+_label: 'error'
+                           }
                        }
      
      if err == 0:
@@ -230,7 +218,7 @@ def read_owmapi(_device,_label):
             windchill = temp
             
         conditions = { 'tele': {
-                          'temp_'+_label: temp,
+                          'temp'+_label: temp,
                           'humidity': int(parsed_json['main']['humidity']),
                           'wind_speed': parsed_json['wind']['speed'],
                           'wind_direction': parsed_json['wind']['deg'],
@@ -364,8 +352,8 @@ def read_wund(_device,_label):
              err = 0
     except:
         writeevt('Error in gathering weather information in read_wund: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
-        conditions = { 'tele': {
-                           'temp': 'error'
+        wund = { 'tele': {
+                           'temp'+_label: 'error'
                            },
                         'attr': {
                             'weather_status': 'error'
@@ -375,8 +363,8 @@ def read_wund(_device,_label):
 
     if err == 0:
         parsed_json = json.loads(f.text)
-        conditions = { 'tele': {
-                          'temp_'+_label: parsed_json['current_observation']['temp_f'],
+        wund = { 'tele': {
+                          'temp'+_label: parsed_json['current_observation']['temp_f'],
                           'humidity': int(parsed_json['current_observation']['relative_humidity'].strip('%')),
                           'wind_speed': parsed_json['current_observation']['wind_mph'],
                           'wind_direction': parsed_json['current_observation']['wind_degrees'],
@@ -390,12 +378,11 @@ def read_wund(_device,_label):
                           },
                        'attr': {
                            'latitude': parsed_json['current_observation']['observation_location']['latitude'],
-                           'longitude': parsed_json['current_observation']['observation_location']['longitude'],
-                           'weather_status': 'successful'
+                           'longitude': parsed_json['current_observation']['observation_location']['longitude']
                            }
                        }
         
-    return conditions
+    return wund
 
 def writeevt(_record,_type,_sev,_authkey, _name):
     #############################################################################

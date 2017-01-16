@@ -44,7 +44,7 @@ VERSION
 
 me = {
     'version': '1.4',
-    'wait': 10              # Number of seconds between polling runs
+    'wait': 600              # Number of seconds between polling runs
     }
 
 
@@ -70,12 +70,18 @@ def main():
                         message[key] = value
 
                 # Gather sensor data and add to the telemetry data
+
                 conditions = com.read_sensor(tele['device'],tele['type'],tele['label'])
-                for key, value in conditions['attr'].items():
-                    attr[key] = value
+
+                # Since not all sensors will not add attributes, if there are none returned, then continue
+                try:
+                    for key, value in conditions['attr'].items():
+                        attr[key] = value
+                except:
+                    None
                 for key, value in conditions['tele'].items():
                     message[key] = value
-                    
+
                 # Build the cache value in preparation for saving it
                 _cache = '{"ts":' + str(time.time() * 1000) + ', "values":' + json.dumps(message) + '}'
                 if set['localonly'] == 1:
