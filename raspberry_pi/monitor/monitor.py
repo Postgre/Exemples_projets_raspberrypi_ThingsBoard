@@ -52,6 +52,7 @@ def main():
     com.writeevt('=================================================================','log','START','',"")
     com.writeevt('Started processing at ' + time.strftime("%Y-%m-%d %H:%M:%S"),'log','INFO','',"")
     while True:
+        message={}
         com.chk_cache()
         message = {}
         for item in cfg.sensors:
