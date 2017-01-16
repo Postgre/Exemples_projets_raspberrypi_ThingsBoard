@@ -52,10 +52,9 @@ def main():
     com.writeevt('=================================================================','log','START','',"")
     com.writeevt('Started processing at ' + time.strftime("%Y-%m-%d %H:%M:%S"),'log','INFO','',"")
     while True:
-        message={}
         com.chk_cache()
-        message = {}
         for item in cfg.sensors:
+            message = {}
             set = item['settings']
             if set['clearcache'] == 1:
                 com.clear_cache(item['authkey'])
