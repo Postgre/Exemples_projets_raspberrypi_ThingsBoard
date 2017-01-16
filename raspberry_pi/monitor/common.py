@@ -46,6 +46,77 @@ me = {
     'cpu_wait': 2             # how long to wait after read_sys_stats is called and CPU usage is measured
     }
 
+def c2f(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: c2f                                                                                      #
+    # Purpose:  Convert degrees C to F                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in F                                                                                #
+    ######################################################################################################
+    return (t*9/5.0)+32
+
+def c2k(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: c2k                                                                                      #
+    # Purpose:  Convert degrees C to K                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in K                                                                                #
+    ######################################################################################################
+    return t+273.15
+
+def f2c(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: f2c                                                                                      #
+    # Purpose:  Convert degrees F to C                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in C                                                                                #
+    ######################################################################################################
+    return (t-32)*5.0/9
+
+def f2k(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: f2k                                                                                      #
+    # Purpose:  Convert degrees F to K                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in K                                                                                #
+    ######################################################################################################
+    return (t+459.67)*5.0/9
+
+def k2c(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: k2c                                                                                      #
+    # Purpose:  Convert degrees K to C                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in C                                                                                #
+    ######################################################################################################
+    return t-273.15
+
+def k2f(t):
+    t = int(t)
+    ######################################################################################################
+    # Function: k2f                                                                                      #
+    # Purpose:  Convert degrees K to F                                                                   #
+    # Credit: http://code.activestate.com/recipes/578804-temperature-conversation-application-in-python/ #
+    # @param    t         temp to be converted                                                           #
+    #                                                                                                    #
+    # @return   temp in F                                                                                #
+    ######################################################################################################
+    return (t*9/5.0)-459.67
 
 def chk_cache():
     #############################################################################
@@ -59,22 +130,22 @@ def chk_cache():
     #############################################################################
     cache_ct = 0
     lines = 0
-    err = 1
+    chk_err = 1
     try:
         for file in os.listdir(cfg.logs['cachedir']):
             with open(cfg.logs['cachedir']+file) as f:
                 lines = lines + sum(1 for _ in f)
             cache_ct = cache_ct + 1
-            err = 0
+            chk_err = 0
     except:
         print('Unable to read from '+cfg.logs['cachedir']+' in chk_cache: - '+ str(sys.exc_info()[0]))
         writeevt('Unable to read from '+cfg.logs['cachedir']+' in chk_cache: - '+ str(sys.exc_info()[0]),'log','WARN','','')
-        return None
-    if err == 0:    
-        if cache_ct != 0 or lines != 0:
-            writeevt('Current cache status: ' + str(cache_ct) + ' files containing '+ str(lines) + ' records.','log','INFO','',"")
+        chk_err = 1
+    if chk_err == 0:    
+        #if cache_ct != 0 or lines != 0:
+        writeevt('Current cache status: ' + str(cache_ct) + ' files containing '+ str(lines) + ' records.','log','INFO','',"")
 
-    return (cache_ct, lines)
+    return (cache_ct, lines, chk_err)
 
 
 def clear_cache(_authkey):
@@ -154,16 +225,13 @@ def read_ds18b20(_device,_label):
     except:
         print("Unexpected error in read_ds18b20:", sys.exc_info()[0])
         writeevt('Unexpected error in read_ds18b20: - '+ str(sys.exc_info()[0]),'log','WARN','',"")
-
         err = 1
 
     if err == 0:
         readraw = lines[1][0:]				       # read the second line, beginning to end
         temp_c = readraw.split("t=",1)[1]		# split everything from t= into temp_c
-        temp_c = float(int(temp_c))				    # temp_c is read as string, convert to int then float
-        temp_c=temp_c/1000				       # values is in 1,000's -- divide to bring to degree units
-        temp_f=(temp_c * 9.0/5.0 + 32)
-        temp = float(temp_f)
+        temp_c = (int(temp_c)/1000)        # ds18b20 present the temp as degrees C times 1000
+        temp = c2f(temp_c)
         ds18b20 = { 'tele': {
                         'temp'+_label: round(temp,1)
                         }}
@@ -216,9 +284,11 @@ def read_owmapi(_device,_label):
             windchill = int(35.74 + (0.6215*T) - 35.75*(V**0.16) + 0.4275*T*(V**0.16))
         else:
             windchill = temp
+        if windchill >= temp:
+            windshill = temp
             
         conditions = { 'tele': {
-                          'temp'+_label: temp,
+                          'temp'+_label: int(temp),
                           'humidity': int(parsed_json['main']['humidity']),
                           'wind_speed': parsed_json['wind']['speed'],
                           'wind_direction': parsed_json['wind']['deg'],
@@ -364,7 +434,7 @@ def read_wund(_device,_label):
     if err == 0:
         parsed_json = json.loads(f.text)
         wund = { 'tele': {
-                          'temp'+_label: parsed_json['current_observation']['temp_f'],
+                          'temp'+_label: int(parsed_json['current_observation']['temp_f']),
                           'humidity': int(parsed_json['current_observation']['relative_humidity'].strip('%')),
                           'wind_speed': parsed_json['current_observation']['wind_mph'],
                           'wind_direction': parsed_json['current_observation']['wind_degrees'],
@@ -405,15 +475,19 @@ def writeevt(_record,_type,_sev,_authkey, _name):
         _entry = time.strftime("%Y-%m-%d %H:%M:%S") + " - " + _sev + ": " + str(_record)
     else:
         print('Wrong message type ' + _type + ' check your code and try again')
+        log_err = 1
         return
     try: 
         outfile=open((_outfile),"a")
         outfile.write(_entry)
         outfile.write("\n")
         outfile.close()
+        log_err = 0
     except:
         print('Unable to write to '+_outfile+': - '+ str(sys.exc_info()[0]))
-        return None
+        log_err = 1
+        
+    return log_err
 
 def publish(_attr, _message,_authkey,_cache_on_err):
     ##############################################################################
@@ -436,6 +510,7 @@ def publish(_attr, _message,_authkey,_cache_on_err):
 
     if cfg.conn['method'] == 'http':
         _cache = '{"ts":' + str(time.time() * 1000) + ', "values":' + json.dumps(_message) + '}'
+        print(len(_message))
         try:
             if cfg.conn['proxy'] == 1:
                 r_attr = requests.post(url['attr'], data=json.dumps(_attr), headers=cfg.http_headers, proxies=cfg.proxies)
@@ -450,17 +525,20 @@ def publish(_attr, _message,_authkey,_cache_on_err):
                     writeevt(_cache,'cache','',_authkey,'')
                 else:
                     writeevt('Record not written to cache due to configuration','log','WARN','',"")
-                status = 0
+                pub_err = 1
             else:
-                
-                status = 1
+                pub_err = 0
         except:
             writeevt('Unable to publish record to server due to error: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
             if _cache_on_err == 1:
                 writeevt(_cache,'cache','',_authkey,'')
             else:
                 writeevt('Record not written to cache due to configuration','log','WARN','',"")
-            status = 0
+            pub_err = 0
     else:
-        return "wrong method"
-    return status
+        writeevt('Unable to publish record due to incorrect method configuration' + str(cfg.settings['method']),'log','WARN','','')
+        print('Incorrect publication method')
+        if _cache_on_err == 1:
+                writeevt(_cache,'cache','',_authkey,'')
+
+    return pub_err
