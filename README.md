@@ -15,6 +15,10 @@ generator/<br>
 - A tool to generate traffic to a Thingsboard server to help learn the platform.  This will generate device 
     (client) attributes as well as basic telemetry data to give you a starting point.
 
+esp8288/<br>
+- Various configurations that allow you to easily and quickly configure ESP8266 devices to poll sensors
+    and feed this information to a Thingsboard server.
+    
 raspberry_pi/monitor<br>
 - A framework for managing multiple sesnsors on one or more devices.  The modular framework will allow you to
      read many differnt sources and send to many different TB devices.  If network connections are down, then the 
