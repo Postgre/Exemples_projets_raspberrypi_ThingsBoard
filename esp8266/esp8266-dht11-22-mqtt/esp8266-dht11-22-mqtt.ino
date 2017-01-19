@@ -18,8 +18,8 @@ char thingsboardServer[] = "[YOUR THINGSBOARD SERVER HERE]";
 
 // Define operation settions
 int unit_f = 1;          // Set this to 1 to convert temp reading to f
-char temp_label[] = "\"temp_kitchen\"";
-char humidity_label[] = "\"humidity_kitchen\"";
+char temp_label[] = "\"temp\"";
+char humidity_label[] = "\"humidity\"";
 int poll_time = 10000;   // Number of milliseconds between readings
 
 
@@ -110,7 +110,12 @@ void getAndSendTemperatureAndHumidityData()
   Serial.print(" %\t");
   Serial.print("Temperature: ");
   Serial.print(t);
-  Serial.print(" *F ");
+  if (unit_f == 1)
+      {
+        Serial.print(" *F ");
+      } else {
+        Serial.print(" *C ");
+      }
   Serial.print("\n");
 
   String temperature = String(t);
