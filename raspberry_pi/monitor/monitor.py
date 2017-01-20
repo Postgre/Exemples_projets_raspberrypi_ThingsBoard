@@ -6,6 +6,8 @@ import time                  # Usef for timestamps, etc
 import requests              # Used to generate HTTP GET and POST actions
 import config as cfg         # Bring in config.py configuration file
 import common as com         # Bring in common.py shared functions
+import logging
+
 '''
 ========================================================================================================
 SYNOPSIS
@@ -37,33 +39,41 @@ REQUIRES
 AUTHOR
     Bob Perciaccante - Bob@perciaccante.net
     
-VERSION
-    1.4 - 1/15/2017 - Initial publication
 ========================================================================================================
 '''
 
 me = {
-    'version': '1.4',
-    'wait': 10              # Number of seconds between polling runs
+    'version': '1.5',
+    'wait': 10,              # Number of seconds between polling runs
+    'sleep_poll': 10         # Number of seconds between individual sensor runs
     }
 
 
 def main():
+    # Set basic logging configuration
+    if cfg.settings['debug'] == 1:
+        logging.basicConfig(level=logging.DEBUG,
+                        format="%(asctime)s - [%(levelname)s] [%(threadName)s] (%(module)s:%(lineno)d) %(message)s",
+                        filename=cfg.logfile)
+    elif cfg.settings['debug'] == 0:
+        logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s - [%(levelname)s] [%(threadName)s] (%(module)s:%(lineno)d) %(message)s",
+                        filename=cfg.logfile)
+    else:
+        logging.basicConfig(level=logging.DEBUG,
+                    format="%(asctime)s - [%(levelname)s] (%(module)s:%(lineno)d) %(message)s")
+    
     # Before starting everything, make sure that the cache and log directories are available
     #     since these are critical to operation
     if os.path.exists(cfg.logs['logdir']) != True or os.path.exists(cfg.logs['cachedir']) != True:
-        print('===================================================================================')
-        print('                 Necessary directories are not properly configured.')
-        print('             Ensure that directories ' + cfg.logs['cachedir'] + ' and ' + cfg.logs['logdir'] +' exist.')
-        print('   Exiting')
-        print('===================================================================================')
+        logging.warn('unable to write to logfile')
         return
 
     # Send initial information to the logfile to facilitate 
-    com.writeevt('=================================================================','log','START','',"")
-    com.writeevt('Started processing at ' + time.strftime("%Y-%m-%d %H:%M:%S"),'log','START','',"")
-    com.writeevt('Sensor readings collected every ' + str(me['wait']) + ' seconds','log','START','',"")
-    com.writeevt('Currently configured sensors:','log','START','',"")
+    logging.info('=================================================================')
+    logging.info('Started processing at ' + time.strftime("%Y-%m-%d %H:%M:%S"))
+    logging.info('Sensor readings collected every ' + str(me['wait']) + ' seconds')
+    logging.info('Currently configured sensors:')
     
     # Gather information on configured sensors and log
     sensors = {
@@ -76,8 +86,10 @@ def main():
         sensors['total'] = sensors['total'] + 1
 
         # Gather the information that is set per sensor, and log the status of the environment to logfile
-        sens_state = "    Active: %s, LocalOnly: %s, Cache on Error: %s, Include SysInfo: %s, Clear cache: %s"  % \
-          (str(set_i['active']),
+        sens_state = 'ID: %s - "%s": Active: %s, LocalOnly: %s, Cache on Error: %s, Include SysInfo: %s, Clear cache: %s'  % \
+          (item_i['id'],
+           attr_i['name'],
+           str(set_i['active']),
            str(set_i['localonly']),
            str(set_i['cache_on_err']),
            str(set_i['sys_info']),
@@ -85,20 +97,22 @@ def main():
            )
         if set_i['active'] == 1:
             sensors['active'] = sensors['active'] + 1
-        com.writeevt('('+str(sensors['total']) +') ' + attr_i['name'] + ' (authkey: '+item_i['authkey'] +')','log','START','',"")
-        com.writeevt(sens_state,'log','START','',"")
+        logging.info(sens_state)
         
-    com.writeevt('Total Sensors Configured - Name: Active: '+str(sensors['active']),'log','START','',"")
+    logging.info('Total Sensors Configured: ' + str(sensors['total']) + ', Active: '+str(sensors['active']))
 
     # Run through the sensor information, and process where configured as "active'
     while True:
+        logging.debug('Running sensor poll')
         com.chk_cache()
+        logging.debug('Checking cache status')
         for item in cfg.sensors:
             message = {}
             set = item['settings']
 
             # If the sensor is configured to clear exsiting cache, check and run
             if set['clearcache'] == 1:
+                logging.debug('Preparing to clear cache files')
                 com.clear_cache(item['authkey'])
 
             # Check to see if the device is configured to be active - if not, then skip
@@ -126,16 +140,10 @@ def main():
                 for key, value in conditions['tele'].items():
                     message[key] = value
 
-                # Build the cache value in preparation for saving it
-                _cache = '{"ts":' + str(time.time() * 1000) + ', "values":' + json.dumps(message) + '}'
+                pub_status = com.publish(attr,message,item['authkey'],set['cache_on_err'],set['localonly'])
+                time.sleep(me['sleep_poll'])
 
-                # the 'localonly' setting will only write events to local file
-                if set['localonly'] == 1:
-                    com.writeevt(_cache,'cache','',item['authkey'],'')
-                else:
-                    pub_status = com.publish(attr,message,item['authkey'],set['cache_on_err'])
-
-                    
+        logging.debug('Completed sensor poll')            
         time.sleep(me['wait'])
 
 if __name__ == '__main__':

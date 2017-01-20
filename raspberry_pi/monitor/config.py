@@ -33,7 +33,7 @@ VERSION
 '''
 
 me = {
-    'ver': '1.4',
+    'ver': '1.5',
     'name': 'config.py'
     }
 '''
@@ -55,9 +55,13 @@ conn = {
     'port': 1883,                                 # MQTT server port number (MQTT transport not yet supported in this script)
     'method': "http",                             # Method used to send data to TB server
     'proxy': 0,                                   # (0,1) If you need to go through a proxy, set to 1
-    'proxy_http': 'http://[YOURPROXY}{:PROXY PORT]',
-    'proxy_https': 'https://[YOURPROXY}{:PROXY PORT]'
+    'proxy_http': '[HTTP://YOUR HTTP SERVER:PORT]',
+    'proxy_https': '[HTTPS://YOUR HTTP SERVER:PORT]'
     }
+
+settings = {
+         'debug': 0
+         }
 
 # These values are used for HTTP POST operations, and supporting the use of proxies easily in functions in
 #    'common.py'
@@ -73,6 +77,12 @@ Sensor Configuration:
 ---------------------
 
 The sensor definitions are broken up into four sections: notes, settings, attributes, and telemtry (sources).
+
+** Note ** the 'id' value must be unique for each sensor definition.  As of version 1.5, the 'id' value allows
+    the script to process multiple local sensor devices, and associate them with a single device, or the
+    inverse, take data from the same sensor and publish it to several different devices.  If you are going
+    to post multiple sensor data to the same device, be careful not to overlap device attributes!  Simply
+    exclude the duplicate attributes in the second sensor definition.
 
 Notes:
     Since it can become confusing keeping track of different sensors based primarily on device auth token,
@@ -120,73 +130,77 @@ Telemetry (tele):
     |              |         information on                                                   |
     |-----------------------------------------------------------------------------------------|
     |              | defines the label used to reflect that specific sensor, a temperature    |
-    |  label       |    sensor would be sent as telemetry value 'temp_[label]'.  This allows  |
-    |              |    for more than one sensor to be installed on a single system.          |
+    |              |    sensor would be sent as telemetry value 'temp[label]'.  This allows   |
+    |  label       |    for more than one sensor to be installed on a single system.  This    |
+    |              |    is ignored for API called telemetry, as the labels if needed will come|
+    |              |    from the API data itself.                                             |
     |-----------------------------------------------------------------------------------------|
 
 ========================================================================================================
    '''
 sensors = [
-    {'authkey': '[AUTHKEY #1]',
+    { 'id': 1,
+      'authkey': '[YOUR AUTHKEY HERE]',
          'notes': {
-             'notes': 'The label of this on the Device list is "Example 1"',
+             'notes': '[YOUR DESCRIPTION HERE]',
              },
          'settings': {                
-            'active': 1,
-            'sys_info': 1,
-            'cache_on_err': 1,
-            'clearcache': 0,
-            'localonly': 1
+            'active':       1,
+            'sys_info':     1,
+            'cache_on_err': 0,
+            'clearcache':   0,
+            'localonly':    0
              },
          'attr': {
-            'platform': "Raspberry Pi 2",
-            'name': '[DESCRIPTIVE NAME LIKE "My Office"]',
-            'location': '[DESCRIPTIVE LOCATION LIKE "Hometown"]',
-            'address': '[STREET ADDRESS - USED FOR MAPS]',
-            'lattitude': '[GET FROM www.latlong.net - also can come from API source]',
-            'longitude': '[GET FROM www.latlong.net - also can come from API source]',
-            'contact': '[NAME OF PERSON RESPONSIBLE FOR AREA]',
-            'contact_email': '[CONTACT EMAIL ADDRESS]',
-            'contact_phone': '[CONTACT PHONE NUMBER]',
-            'temp_low': '[LOWER TEMP THRESHOLD]',
-            'temp_high': '[UPPER TEMP THRESHOLD]'
+            'platform':      '[PLATFORM NAME]',
+            'name':          '[DESCRIPTIVE NAME]',
+            'location':      '[LOCATION NAME]',
+            'address':       '[YOUR ADDRESS HERE]',
+            'lattitude':     '[LATTITUDE - GET FROM LATLONG.NET]',
+            'longitude':     '[LONGITUDE - GET FROM LATLONG.NET]',
+            'contact':       '[CONTACT NAME]',
+            'contact_email': '[CONTACT EMAIL]',
+            'contact_phone': '[CONTACT PHONE]',
+            'temp_low':      33,
+            'temp_high':     39
              },
          'tele': {
-            'type': 'ds18b20',
-            'device': '/sys/bus/w1/devices/[YOUR DEVICE ID HERE]/w1_slave',
-            'label': 'office'
+            'type':          '[DEVICE TYPE]',
+            'device':        '[DEVICE LOCATION]',
+            'label':         '[LABEL]'
              }
      },
-     {'authkey': '[AUTHKEY #2]',
-          'notes': {
-                 'notes': 'Another place to put notes that wont affect the program at all',
-                 },
-         'settings': {
-            'active': 1,
-            'sys_info': 1,
+    { 'id': 1,
+      'authkey': '[YOUR AUTHKEY HERE]',
+         'notes': {
+             'notes': '[YOUR DESCRIPTION HERE]',
+             },
+         'settings': {                
+            'active':       1,
+            'sys_info':     1,
             'cache_on_err': 0,
-            'clearcache': 0,
-            'localonly': 1
+            'clearcache':   0,
+            'localonly':    0
              },
          'attr': {
-            'platform': "API Call",
-            'name': 'Local Weather - MyHomeTown',
-            'location': '[DESCRIPTIVE LOCATION LIKE "Hometown"]',
-            'address': '[STREET ADDRESS - USED FOR MAPS]',
-            'lattitude': '[GET FROM www.latlong.net - also can come from API source]',
-            'longitude': '[GET FROM www.latlong.net - also can come from API source]',
-            'contact': '[NAME OF PERSON RESPONSIBLE FOR AREA]',
-            'contact_email': '[CONTACT EMAIL ADDRESS]',
-            'contact_phone': '[CONTACT PHONE NUMBER]',
-            'temp_low': '[LOWER TEMP THRESHOLD]',
-            'temp_high': '[UPPER TEMP THRESHOLD]'
+            'platform':      '[PLATFORM NAME]',
+            'name':          '[DESCRIPTIVE NAME]',
+            'location':      '[LOCATION NAME]',
+            'address':       '[YOUR ADDRESS HERE]',
+            'lattitude':     '[LATTITUDE - GET FROM LATLONG.NET]',
+            'longitude':     '[LONGITUDE - GET FROM LATLONG.NET]',
+            'contact':       '[CONTACT NAME]',
+            'contact_email': '[CONTACT EMAIL]',
+            'contact_phone': '[CONTACT PHONE]',
+            'temp_low':      33,
+            'temp_high':     39
              },
          'tele': {
-            'type': 'owm', 
-            'device': '10118',
-            'label': 'ignored'
+            'type':          '[DEVICE TYPE]',
+            'device':        '[DEVICE LOCATION]',
+            'label':         '[LABEL]'
              }
-     }
+      }
 ]
 
 '''
@@ -216,7 +230,7 @@ Custom configuration settings can be added below this point for different sensor
 #    https://openweathermap.org/api
 
 owm_settings = {
-    'owm_api': '[YOUR API KEY HERE]',
+    'owm_api': '[YOUR OWM API HERE]',
     'owm_format': 'json',
     'owm_url': 'http://api.openweathermap.org/data/2.5/weather?us&APPID=',
     'temp_units': 'f',
@@ -227,7 +241,7 @@ owm_url = owm_settings['owm_url']+owm_settings['owm_api']+'&mode='+owm_settings[
 #    specific to your installation.  You can get more information on API keys on their website at:
 #    https://www.wunderground.com/weather/api/
 wund_settings = {
-    'wund_api': '[YOUR API KEY HERE]',
+    'wund_api': '[YOUR WEATHER UNDERGROUND API HERE]',
     'wund_format': 'json'
     }
 wund_url = 'http://api.wunderground.com/api/'+wund_settings['wund_api']+'/geolookup/conditions/q/'

@@ -1,0 +1,22 @@
+* Release 1.x
+** 1.5 (2017/01/21)
+*** Improvements
+- Added ability to publish multiple sensor datasets to single device
+- Converted logging to python standard logging facility
+- Moved caching function to individual function
+- Publish function now decides where records are sent - streamlines code reuse
+- Debugging added to help find errors in configuration and connectivity
+- Changed weather functions to append the label to all values to allow for aggregated
+  weather devices.  This will reduce complication (less devices) as a single device can
+  gather weather data from multiple sources.
+*** Fixes
+- Fixed bug where telemetry and attribute information was being shared between published results
+
+** 1.4 (2017/01/16)
+*** Improvements
+- Increased readability and flow with additional comments added
+- Additional logging added, but will be moving to python logger in next release
+- Cleaned up code, added temp conversion functions to library for ease of reuse
+- Cleaned up sensor processing code to make it more flexible, to add new sensor types in the future
+*** Fixes
+- Fixed bug where telemetry and attribute information was being shared between published results

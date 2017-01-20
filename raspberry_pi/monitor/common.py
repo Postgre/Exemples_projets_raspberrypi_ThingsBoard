@@ -12,6 +12,7 @@ import config as cfg                # Bring in shared configuration file
 import humanize                     # Convert data to more easily read formatts
 import sys
 import time
+import logging
 
 '''
 ========================================================================================================
@@ -35,13 +36,11 @@ REQUIRES
 AUTHOR
     Bob Perciaccante - Bob@perciaccante.net
     
-VERSION
-    1.4 - 1/15/2017 - Initial publication
 ========================================================================================================
 '''
 
 me = {
-    'ver': '1.4',
+    'ver': '1.5',
     'name': 'common.py',
     'cpu_wait': 2             # how long to wait after read_sys_stats is called and CPU usage is measured
     }
@@ -139,11 +138,11 @@ def chk_cache():
             chk_err = 0
     except:
         print('Unable to read from '+cfg.logs['cachedir']+' in chk_cache: - '+ str(sys.exc_info()[0]))
-        writeevt('Unable to read from '+cfg.logs['cachedir']+' in chk_cache: - '+ str(sys.exc_info()[0]),'log','WARN','','')
+        logging.warn('Unable to read from '+cfg.logs['cachedir']+' in chk_cache: - '+ str(sys.exc_info()[0]))
         chk_err = 1
     if chk_err == 0:    
         #if cache_ct != 0 or lines != 0:
-        writeevt('Current cache status: ' + str(cache_ct) + ' files containing '+ str(lines) + ' records.','log','INFO','',"")
+        logging.info('Current cache status: ' + str(cache_ct) + ' files containing '+ str(lines) + ' records')
 
     return (cache_ct, lines, chk_err)
 
@@ -164,6 +163,7 @@ def clear_cache(_authkey):
     #                                                                            #
     # @return   none                                                             #
     ##############################################################################
+    logging.debug('Starting Clear Cache process for device ' + _authkey)
     ct_files = 0                  # used to count files in cache directory
     ct_lines = 0                  # used to count records in cache files
     ct_200 = 0                    # counts successful posting of cache records
@@ -174,6 +174,7 @@ def clear_cache(_authkey):
                 _tele = cfg.conn['method'] + '://' + cfg.conn['server'] +'/api/v1/'+_authkey +'/telemetry'
                 
                 with open(cfg.logs['cachedir']+file) as f:
+                    logging.debug('Starting Clear Cache process for device ' + _authkey)
                     for line in f:
                         ct_lines = ct_lines + 1
                         try:
@@ -185,22 +186,23 @@ def clear_cache(_authkey):
                                 ct_200 = ct_200 + 1
                             err = 0
                             
-                        except:
-                            writeevt('Unexpected error in clear_cache: - '+ str(sys.exc_info()[0]),'log','WARN','',"")
-                            writeevt('Unable to connect to server to clear cache.  No action taken','log','WARN','',"")
+                        except Exception as e:
+                            logging.error(e)
+                            logging.warn('Unexpected error in clear_cache: - '+ str(sys.exc_info()[0]))
+                            logging.warn('Unable to connect to server to clear cache.  No action taken')
                             err = 1
                         
                 if err == 0:
                     ct_files = ct_files + 1
                     if ct_lines == ct_200:
                         os.remove(cfg.logs['cachedir']+file)
-                        writeevt('Cache successfully cleared or device ' + authkey[0] +'. '+ str(ct_200) + ' records submitted','log','INFO','',"")
+                        logging.info('Cache successfully cleared or device ' + authkey[0] +'. '+ str(ct_200) + ' records submitted')
                     else:
                         print("Unexpected error in clear_cache:", sys.exc_info()[0])
-                        writeevt('Unexpected error in clear_cache: - '+ sys.exc_info()[0],'log','WARN','',"")
+                        logging.warn('Unexpected error in clear_cache: - '+ sys.exc_info()[0])
     except:
         print('Unable to read from '+cfg.logs['cachedir']+' in clear_cache: - '+ str(sys.exc_info()[0]))
-        writeevt('Unable to read from '+cfg.logs['cachedir']+' in clear_cache: - '+ str(sys.exc_info()[0]),'log','WARN','','')
+        logging.warn('Unable to read from '+cfg.logs['cachedir']+' in clear_cache: - '+ str(sys.exc_info()[0]))
         return None
     return
 
@@ -223,8 +225,8 @@ def read_ds18b20(_device,_label):
         err = 0
 
     except:
-        print("Unexpected error in read_ds18b20:", sys.exc_info()[0])
-        writeevt('Unexpected error in read_ds18b20: - '+ str(sys.exc_info()[0]),'log','WARN','',"")
+        print('Unexpected error in read_ds18b20 for device "' + _device + '":', str(sys.exc_info()[0]))
+        logging.warn('Unexpected error in read_ds18b20 for device "' + _device +'": - '+ str(sys.exc_info()[0]))
         err = 1
 
     if err == 0:
@@ -261,13 +263,13 @@ def read_owmapi(_device,_label):
          else:
             f = requests.get(cfg.owm_url+'&zip='+_device)
          if f.status_code != 200:
-            writeevt('Connection to weather data failed, returned code:'+f.status_code,'log','WARN','','')
+            logging.warn('Connection to weather data failed, returned code:'+f.status_code)
             temp = 'na'
             err = 1
          else:
             err = 0
      except:
-        writeevt('Error in gathering weather information in read_owmapi: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
+        logging.warn('Error in gathering weather information in read_owmapi: - '+ str(sys.exc_info()[0]))
         err = 1
         conditions = { 'tele': {
                            'temp'+_label: 'error'
@@ -410,18 +412,20 @@ def read_wund(_device,_label):
     #                                                                           #
     # @return   conditions    current conditions as list of dictionaries        #
     #############################################################################
+    logging.debug('Pulling weather information for zipcode: ' + _device)
     try:
          if cfg.conn['proxy'] == 1:
             f = requests.get(cfg.wund_url+_device+'.'+cfg.wund_settings['wund_format'], proxies=cfg.proxies)
          else:
             f = requests.get(cfg.wund_url+_device+'.'+cfg.wund_settings['wund_format'])
          if f.status_code != 200:
-            writeevt('Connection to weather data failed, returned code:'+conditions.status_code,'log','WARN','','')
+            logging.warn('Connection to weather data failed, returned code:'+conditions.status_code)
             temp = 'na'
          else:
              err = 0
-    except:
-        writeevt('Error in gathering weather information in read_wund: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
+    except Exception as e:
+        logging.error(e)
+        logging.error('Error in gathering weather information in read_wund: - '+ str(sys.exc_info()[0]))
         wund = { 'tele': {
                            'temp'+_label: 'error'
                            },
@@ -435,16 +439,16 @@ def read_wund(_device,_label):
         parsed_json = json.loads(f.text)
         wund = { 'tele': {
                           'temp'+_label: int(parsed_json['current_observation']['temp_f']),
-                          'humidity': int(parsed_json['current_observation']['relative_humidity'].strip('%')),
-                          'wind_speed': parsed_json['current_observation']['wind_mph'],
-                          'wind_direction': parsed_json['current_observation']['wind_degrees'],
-                          'wind_chill': int(parsed_json['current_observation']['windchill_f']),
-                          'wind_gusts': int(parsed_json['current_observation']['wind_gust_mph']),
-                          'visibility': float(parsed_json['current_observation']['visibility_mi']),
-                          'pressure': int(parsed_json['current_observation']['pressure_mb']),
-                          'precip_today': float(parsed_json['current_observation']['precip_today_in']),
-                          'dewpoint': int(parsed_json['current_observation']['dewpoint_f']),
-                          'uv_index': int(parsed_json['current_observation']['UV'])
+                          'humidity'+_label: int(parsed_json['current_observation']['relative_humidity'].strip('%')),
+                          'wind_speed'+_label: parsed_json['current_observation']['wind_mph'],
+                          'wind_direction'+_label: parsed_json['current_observation']['wind_degrees'],
+                          'wind_chill'+_label: int(parsed_json['current_observation']['windchill_f']),
+                          'wind_gusts'+_label: int(parsed_json['current_observation']['wind_gust_mph']),
+                          'visibility'+_label: float(parsed_json['current_observation']['visibility_mi']),
+                          'pressure'+_label: int(parsed_json['current_observation']['pressure_mb']),
+                          'precip_today'+_label: float(parsed_json['current_observation']['precip_today_in']),
+                          'dewpoint'+_label: int(parsed_json['current_observation']['dewpoint_f']),
+                          'uv_index'+_label: int(parsed_json['current_observation']['UV'])
                           },
                        'attr': {
                            'latitude': parsed_json['current_observation']['observation_location']['latitude'],
@@ -454,7 +458,8 @@ def read_wund(_device,_label):
         
     return wund
 
-def writeevt(_record,_type,_sev,_authkey, _name):
+def write_cache(_record,_authkey):
+    # write_cache(_cache,_authkey)
     #############################################################################
     # Function: writeevt                                                        #
     # Purpose: Acts as centralized logging facility - creates logs, records, and#
@@ -467,29 +472,28 @@ def writeevt(_record,_type,_sev,_authkey, _name):
     #                                                                           #
     #       @return none                                                        #
     #############################################################################
-    if _type == 'cache':
-        _outfile = cfg.logs['cachedir'] + _authkey +"_" + time.strftime("%Y-%m-%d") + '.cache'
-        _entry = _record
-    elif _type == 'log':
-        _outfile = cfg.logfile
-        _entry = time.strftime("%Y-%m-%d %H:%M:%S") + " - " + _sev + ": " + str(_record)
-    else:
-        print('Wrong message type ' + _type + ' check your code and try again')
-        log_err = 1
-        return
+
+    _outfile = cfg.logs['cachedir'] + _authkey +"_" + time.strftime("%Y-%m-%d") + '.cache'
+    _entry = _record
+    logging.debug('Writing cache record to '+_outfile)
+
     try: 
         outfile=open((_outfile),"a")
         outfile.write(_entry)
         outfile.write("\n")
         outfile.close()
         log_err = 0
-    except:
+        logging.debug('Cache written successfully to  '+_outfile)
+    except Exception as e:
+        logging.error(e)
         print('Unable to write to '+_outfile+': - '+ str(sys.exc_info()[0]))
         log_err = 1
         
     return log_err
 
-def publish(_attr, _message,_authkey,_cache_on_err):
+
+def publish(_attr, _message,_authkey,_cache_on_err,_localonly):
+    logging.debug('Starting publish function')
     ##############################################################################
     # Function: publish                                                          #
     # Purpose:  Take attribute and telemetry and publish it to the server.  If   #
@@ -502,43 +506,50 @@ def publish(_attr, _message,_authkey,_cache_on_err):
     #                                                                            #
     #       @return status             indicator of status - temp                #
     ##############################################################################
-    
-    url = {
-    'attr': cfg.conn['method'] + '://' + cfg.conn['server'] +'/api/v1/'+ _authkey +'/attributes',
-    'tele': cfg.conn['method'] + '://' + cfg.conn['server'] +'/api/v1/'+ _authkey +'/telemetry',
-    }
 
-    if cfg.conn['method'] == 'http':
-        _cache = '{"ts":' + str(time.time() * 1000) + ', "values":' + json.dumps(_message) + '}'
-        print(len(_message))
-        try:
-            if cfg.conn['proxy'] == 1:
-                r_attr = requests.post(url['attr'], data=json.dumps(_attr), headers=cfg.http_headers, proxies=cfg.proxies)
-                r_tele = requests.post(url['tele'], data=json.dumps(_message), headers=cfg.http_headers, proxies=cfg.proxies)   
-            else:
-                r_tele = requests.post(url['tele'], data=json.dumps(_message), headers=cfg.http_headers)
-                r_attr = requests.post(url['attr'], data=json.dumps(_attr), headers=cfg.http_headers)
-            if r_attr.status_code != 200 or r_tele.status_code != 200:
-                _event = 'Unable to push data to server, returned codes: Attributes: '+ str(r_attr.status_code) +', Telemetry: ' + str(r_tele.status_code)
-                writeevt(_event,'log','WARN','',"")
-                if _cache_on_err == 1:
-                    writeevt(_cache,'cache','',_authkey,'')
+    _cache = '{"ts":' + str(time.time() * 1000) + ', "values":' + json.dumps(_message) + '}'
+    logging.debug('method: ' + cfg.conn['method'])
+    logging.debug('message: ' + str(_message))
+    logging.debug('attributes' + str(_attr))
+
+    if _localonly == 1:
+        logging.debug('Local only configuration, writing cache to disk.')
+        pub_err = write_cache(_cache,_authkey)
+    
+    elif cfg.conn['method'] == 'http':
+            logging.debug('Writing cache to server - ' + str(_message))
+            url = {
+                'attr': cfg.conn['method'] + '://' + cfg.conn['server'] +'/api/v1/'+ _authkey +'/attributes',
+                'tele': cfg.conn['method'] + '://' + cfg.conn['server'] +'/api/v1/'+ _authkey +'/telemetry',
+                }
+            try:
+                if cfg.conn['proxy'] == 1:
+                    r_attr = requests.post(url['attr'], data=json.dumps(_attr), headers=cfg.http_headers, proxies=cfg.proxies)
+                    r_tele = requests.post(url['tele'], data=json.dumps(_message), headers=cfg.http_headers, proxies=cfg.proxies)   
                 else:
-                    writeevt('Record not written to cache due to configuration','log','WARN','',"")
-                pub_err = 1
-            else:
+                    r_tele = requests.post(url['tele'], data=json.dumps(_message), headers=cfg.http_headers)
+                    r_attr = requests.post(url['attr'], data=json.dumps(_attr), headers=cfg.http_headers)
+                if r_attr.status_code != 200 or r_tele.status_code != 200:
+                    logging.warn('Unable to push data to server, returned codes: Attributes: '+ str(r_attr.status_code) +', Telemetry: ' + str(r_tele.status_code))
+                    if _cache_on_err == 1:
+                        write_cache(_cache,_authkey)
+                    else:
+                        logging.warn('Record not written to cache due to configuration')
+                    pub_err = 1
+                else:
+                    pub_err = 0
+            except Exception as e:
+                logging.error('Unable to publish record to server due to error: - '+ str(sys.exc_info()[0]))
+                logging.error(e)
+                if _cache_on_err == 1:
+                    logging.warn('Writing record to cache doe to connection failure')
+                    write_cache(_cache,_authkey)
+                else:
+                    logging.warn('Record not written to cache due to configuration')
                 pub_err = 0
-        except:
-            writeevt('Unable to publish record to server due to error: - '+ str(sys.exc_info()[0]) + ' ','log','WARN','','')
-            if _cache_on_err == 1:
-                writeevt(_cache,'cache','',_authkey,'')
-            else:
-                writeevt('Record not written to cache due to configuration','log','WARN','',"")
-            pub_err = 0
     else:
-        writeevt('Unable to publish record due to incorrect method configuration' + str(cfg.settings['method']),'log','WARN','','')
-        print('Incorrect publication method')
+        logging.warn('Unable to publish record due to incorrect method configuration' + str(cfg.settings['method']))
         if _cache_on_err == 1:
-                writeevt(_cache,'cache','',_authkey,'')
+                write_cache(_cache,_authkey)
 
     return pub_err
